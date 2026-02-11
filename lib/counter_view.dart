@@ -33,7 +33,32 @@ class _CounterViewState extends State<CounterView>{
                   _controller.step = int.tryParse(value) ?? 1;
                 });
               },
-            )
+            ),
+
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Riwayat Aktivitas:",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+
+
+            Expanded(
+              child: ListView.builder(
+                 itemCount: _controller.history.length,
+                 itemBuilder: (context, index) {
+                   return Card(
+                     color: Colors.grey[100],
+                     elevation: 0,
+                     child: ListTile(
+                       leading: const Icon(Icons.history, color: Colors.deepPurple),
+                       title: Text(_controller.history[index]),
+                    ),
+                  );
+                },
+              ),
+           ),
           ],
         ),
       ),
