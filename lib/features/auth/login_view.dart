@@ -1,8 +1,6 @@
 // login_view.dart
 import 'package:flutter/material.dart';
-// Import Controller milik sendiri (masih satu folder)
 import 'package:logbook_app_001/features/auth/login_controller.dart';
-// Import View dari fitur lain (Logbook) untuk navigasi
 import 'package:logbook_app_001/features/logbook/counter_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -12,14 +10,27 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  // Inisialisasi Otak dan Controller Input
   final LoginController _controller = LoginController();
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
 
+  // MODIFIKASI TASK 2: Variabel untuk mengatur visibilitas password
+  bool _isObscure = true;
+
   void _handleLogin() {
-    String user = _userController.text;
-    String pass = _passController.text;
+    String user = _userController.text.trim(); // .trim() untuk hapus spasi tak sengaja
+    String pass = _passController.text.trim();
+
+    // MODIFIKASI TASK 2: Validasi Input Kosong
+    if (user.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Username dan Password tidak boleh kosong!"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Stop eksekusi agar tidak lanjut login
+    }
 
     bool isSuccess = _controller.login(user, pass);
 
@@ -27,13 +38,15 @@ class _LoginViewState extends State<LoginView> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          // Di sini kita kirimkan variabel 'user' ke parameter 'username' di CounterView
           builder: (context) => CounterView(username: user),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login Gagal! Gunakan admin/123")),
+        const SnackBar(
+          content: Text("Login Gagal! Cek username/password."),
+          backgroundColor: Colors.orange,
+        ),
       );
     }
   }
@@ -50,13 +63,33 @@ class _LoginViewState extends State<LoginView> {
               controller: _userController,
               decoration: const InputDecoration(labelText: "Username"),
             ),
+            const SizedBox(height: 10), // Memberi sedikit jarak
+            
+            // MODIFIKASI TASK 2: TextField Password dengan Icon Mata
             TextField(
               controller: _passController,
-              obscureText: true, // Menyembunyikan teks password
-              decoration: const InputDecoration(labelText: "Password"),
+              obscureText: _isObscure, // Menggunakan variabel state
+              decoration: InputDecoration(
+                labelText: "Password",
+                // Ikon Mata (Suffix Icon)
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _isObscure ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isObscure = !_isObscure; // Toggle true/false
+                    });
+                  },
+                ),
+              ),
             ),
+            
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _handleLogin, child: const Text("Masuk")),
+            ElevatedButton(
+              onPressed: _handleLogin, 
+              child: const Text("Masuk")
+            ),
           ],
         ),
       ),
