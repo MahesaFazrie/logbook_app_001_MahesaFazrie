@@ -1,65 +1,57 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logbook_app_001/features/models/log_model.dart'; 
 
-class CounterController 
-{
-  int _counter = 0; 
-  final List<String> _history = [];
+class CounterController {
+  // Mengubah state management menjadi Reactive
+  final ValueNotifier<List<LogModel>> logsNotifier = ValueNotifier([]);
+  static const String _storageKey = 'user_logs_data';
 
-  int get value => _counter;
-  List<String> get history => _history;
-
-  static const String _keyCounter = 'last_counter_value';
-
-  String _getcurrentTime() {
-    final now = DateTime.now();
-    final hour = now.hour.toString().padLeft(2, '0');
-    final minute = now.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+  CounterController() { 
+    loadFromDisk(); 
   }
 
-  void _addToHistory(String logMessage) {
-    _history.insert(0, logMessage);
-    // UBAH: Batasi riwayat hanya 5 data terbaru
-    if (_history.length > 5) { 
-      _history.removeLast();
-    }
+  void addLog(String title, String desc) {
+    final newLog = LogModel(
+      title: title, 
+      description: desc, 
+      date: DateTime.now().toString()
+    );
+    logsNotifier.value = [...logsNotifier.value, newLog];
+    saveToDisk();
   }
 
-  Future<void> loadLastValue() async {
+  void updateLog(int index, String title, String desc) {
+    final currentLogs = List<LogModel>.from(logsNotifier.value);
+    currentLogs[index] = LogModel(
+      title: title, 
+      description: desc, 
+      date: DateTime.now().toString()
+    );
+    logsNotifier.value = currentLogs;
+    saveToDisk();
+  }
+
+  void removeLog(int index) {
+    final currentLogs = List<LogModel>.from(logsNotifier.value);
+    currentLogs.removeAt(index);
+    logsNotifier.value = currentLogs;
+    saveToDisk();
+  }
+
+  Future<void> saveToDisk() async {
     final prefs = await SharedPreferences.getInstance();
-    _counter = prefs.getInt(_keyCounter) ?? 0;
+    final String encodedData = jsonEncode(logsNotifier.value.map((e) => e.toMap()).toList());
+    await prefs.setString(_storageKey, encodedData);
   }
 
-  Future<void> _saveLastValue() async {
+  Future<void> loadFromDisk() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyCounter, _counter);
+    final String? data = prefs.getString(_storageKey);
+    if (data != null) {
+      final List decoded = jsonDecode(data);
+      logsNotifier.value = decoded.map((e) => LogModel.fromMap(e)).toList();
+    }
   }
-
-  void increment(int amount) {
-    _counter += amount;
-    _addToHistory('User menambahkan nilai sebesar $amount pada ${_getcurrentTime()}');
-    _saveLastValue();
-  } 
-
-  void decrement(int amount) {
-    if (_counter >= amount) {
-      _counter -= amount;
-      _addToHistory('User mengurangi nilai sebesar $amount pada ${_getcurrentTime()}');
-    }
-    else if (_counter > 0) {
-      int sisa = _counter;
-      _counter = 0;
-      _addToHistory('User mengurangi nilai sebesar $sisa pada ${_getcurrentTime()}');
-    }
-    else{
-      _addToHistory('User gagal mengurangi nilai pada ${_getcurrentTime()} (Nilai 0)');
-    }
-    _saveLastValue();
-  } 
-
-  void reset() {
-    _counter = 0;
-    _addToHistory('User mereset nilai pada ${_getcurrentTime()}');
-    _saveLastValue();
-  } 
 }
