@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logbook_app_001/features/logbook/counter_controller.dart'; // Import controller lama Anda
 import 'package:logbook_app_001/features/models/log_model.dart';   // Pastikan path ini sesuai
 import 'package:logbook_app_001/features/onboarding/onboarding_view.dart';
+import 'package:logbook_app_001/features/logbook/log_controller.dart'; // Import controller baru yang sudah diperbarui
 
 class LogView extends StatefulWidget {
   final String username;
@@ -15,10 +16,17 @@ class LogView extends StatefulWidget {
 class _LogViewState extends State<LogView> {
   // Kita tetap menggunakan CounterController karena itu nama file Anda saat ini
   final CounterController _controller = CounterController();
+  late final LogController _logController; 
   
   // Controller untuk Input Text (Sesuai Modul 3 Langkah 4)
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _logController = LogController(username: widget.username); // Inisialisasi LogController dengan username
+  }
 
   // Logika Pesan Selamat Datang
   String _welcomeMessage() {

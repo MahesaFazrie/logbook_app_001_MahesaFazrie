@@ -4,10 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/log_model.dart';
 
 class LogController {
+  final String username;
+  late final String _storageKey;
+  
   final ValueNotifier<List<LogModel>> logsNotifier = ValueNotifier([]);
-  static const String _storageKey = 'user_logs_data';
+  // static const String _storageKey = 'user_logs_data';
 
-  LogController() { loadFromDisk(); }
+  LogController({required this.username}) { 
+      _storageKey = 'user_logs_data_$username'; 
+      loadFromDisk();
+  }
 
   void addLog(String title, String desc) {
     final newLog = LogModel(title: title, description: desc, date: DateTime.now().toString());
