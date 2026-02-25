@@ -16,7 +16,8 @@ class CounterController {
     final newLog = LogModel(
       title: title, 
       description: desc, 
-      date: DateTime.now().toString()
+      date: DateTime.now().toString(),
+      category: 'Pribadi',
     );
     logsNotifier.value = [...logsNotifier.value, newLog];
     saveToDisk();
@@ -27,7 +28,8 @@ class CounterController {
     currentLogs[index] = LogModel(
       title: title, 
       description: desc, 
-      date: DateTime.now().toString()
+      date: DateTime.now().toString(),
+      category: 'Pribadi',
     );
     logsNotifier.value = currentLogs;
     saveToDisk();

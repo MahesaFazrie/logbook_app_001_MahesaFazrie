@@ -15,12 +15,26 @@ class LogView extends StatefulWidget {
 
 class _LogViewState extends State<LogView> {
   // Kita tetap menggunakan CounterController karena itu nama file Anda saat ini
-  final CounterController _controller = CounterController();
+  // final CounterController _controller = CounterController();
   late final LogController _logController; 
   
   // Controller untuk Input Text (Sesuai Modul 3 Langkah 4)
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  String _selectedCategory = "Pribadi"; // Default category
+  final List<String> _categories = ['Pekerjaan', 'Pribadi', 'Urgent'];
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Pekerjaan':
+        return Colors.blue.shade100;
+      case 'Urgent':
+        return Colors.red.shade100;
+      case 'Pribadi':
+      default: 
+        return Colors.green.shade100;
+    }
+  }
 
   @override
   void initState() {
@@ -77,49 +91,63 @@ class _LogViewState extends State<LogView> {
   }
 
   // DIALOG TAMBAH (Create)
-  void _showAddLogDialog() {
+void _showAddLogDialog() {
+    _selectedCategory = 'Pribadi'; 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Tambah Catatan Baru"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(hintText: "Judul Catatan"),
+      builder: (context) => StatefulBuilder( 
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text("Tambah Catatan Baru"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(hintText: "Judul Catatan"),
+                ),
+                TextField(
+                  controller: _contentController,
+                  decoration: const InputDecoration(hintText: "Isi Deskripsi"),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(labelText: "Kategori"),
+                  items: _categories.map((String category) {
+                    return DropdownMenuItem(value: category, child: Text(category));
+                  }).toList(),
+                  onChanged: (value) {
+                    setStateDialog(() { 
+                      _selectedCategory = value!;
+                    });
+                  },
+                ),
+              ],
             ),
-            TextField(
-              controller: _contentController,
-              decoration: const InputDecoration(hintText: "Isi Deskripsi"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_titleController.text.isNotEmpty) {
-                // Memanggil fungsi addLog dari CounterController
-                _controller.addLog(
-                  _titleController.text, 
-                  _contentController.text,
-                );
-                _titleController.clear();
-                _contentController.clear();
-                Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Judul tidak boleh kosong")),
-                );
-              }
-            },
-            child: const Text("Simpan"),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context), 
+                child: const Text("Batal"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_titleController.text.isNotEmpty) {
+                    _logController.addLog( // Kirim parameter kategori
+                      _titleController.text, 
+                      _contentController.text,
+                      _selectedCategory,
+                    );
+                    _titleController.clear();
+                    _contentController.clear();
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text("Simpan"),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
@@ -147,7 +175,7 @@ class _LogViewState extends State<LogView> {
           ),
           ElevatedButton(
             onPressed: () {
-              _controller.updateLog(index, _titleController.text, _contentController.text);
+              _logController.updateLog(index, _titleController.text, _contentController.text, log.category);
               _titleController.clear();
               _contentController.clear();
               Navigator.pop(context);
@@ -198,20 +226,29 @@ class _LogViewState extends State<LogView> {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
+            TextField(
+              onChanged: (value) => _logController.searchLog(value),
+              decoration: const InputDecoration(
+                labelText: "Cari Catatan...",
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+
             const Divider(),
 
             // List Data (Reactive UI menggunakan ValueListenableBuilder)
             Expanded(
               child: ValueListenableBuilder<List<LogModel>>(
                 // Mengakses logsNotifier dari CounterController
-                valueListenable: _controller.logsNotifier,
+                valueListenable: _logController.filteredLogs,
                 builder: (context, currentLogs, child) {
                   if (currentLogs.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        "Belum ada catatan logbook.", 
-                        style: TextStyle(color: Colors.grey)
+                    return Center(
+                      child: Image.asset(
+                        "assets/images/Azka.jpeg", 
+                        width: 200,
+                        height: 200,
                       )
                     );
                   }
@@ -222,6 +259,7 @@ class _LogViewState extends State<LogView> {
                       // Menampilkan data LogModel ke dalam Card (Langkah 3)
                       return Card(
                         elevation: 2,
+                        color: _getCategoryColor( log.category), // Warna berdasarkan kategori
                         margin: const EdgeInsets.symmetric(vertical: 6),
                         child: ListTile(
                           leading: const Icon(Icons.note_alt_outlined, color: Colors.indigo),
@@ -236,7 +274,7 @@ class _LogViewState extends State<LogView> {
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () {
-                                  _controller.removeLog(index);
+                                  _logController.removeLog(index);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text("Catatan berhasil dihapus")),
                                   );
