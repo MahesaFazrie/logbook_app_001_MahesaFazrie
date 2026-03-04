@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import '../models/log_model.dart';
-import '../../services/mongo_service.dart';
-import '../../helpers/log_helper.dart';
+import 'package:logbook_app_001/services/mongo_service.dart';
+import 'package:logbook_app_001/helpers/log_helper.dart';
 
 class LogController {
   final String username;
