@@ -17,6 +17,7 @@ class _LogViewState extends State<LogView> {
   // Kita tetap menggunakan CounterController karena itu nama file Anda saat ini
   // final CounterController _controller = CounterController();
   late final LogController _logController; 
+  bool _isLoading = true;
   
   // Controller untuk Input Text (Sesuai Modul 3 Langkah 4)
   final TextEditingController _titleController = TextEditingController();
@@ -39,7 +40,26 @@ class _LogViewState extends State<LogView> {
   @override
   void initState() {
     super.initState();
-    _logController = LogController(username: widget.username); // Inisialisasi LogController dengan username
+    _logController = LogController(username: widget.username);
+    Future.microtask(() => _initDatabase()); // Inisialisasi LogController dengan username
+  }
+
+  Future<void> _initDatabase() async {
+    setState(() => _isLoading = true);
+    try {
+      await MongoService().connect().timeout(
+        const Duration(seconds: 15),
+      );
+      await _logController.loadFromDisk();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Masalah Koneksi: $e"), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   // Logika Pesan Selamat Datang
@@ -240,9 +260,21 @@ void _showAddLogDialog() {
             // List Data (Reactive UI menggunakan ValueListenableBuilder)
             Expanded(
               child: ValueListenableBuilder<List<LogModel>>(
-                // Mengakses logsNotifier dari CounterController
                 valueListenable: _logController.filteredLogs,
                 builder: (context, currentLogs, child) {
+                  if (_isLoading) {
+                    return const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text("Menghubungkan ke MongoDB Atlas..."),
+                        ],
+                      ),
+                    );
+                  }
+
                   if (currentLogs.isEmpty) {
                     return Center(
                       child: Image.asset(

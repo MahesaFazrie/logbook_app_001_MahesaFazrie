@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:logbook_app_001/features/onboarding/onboarding_view.dart';
 
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
+  
+  runApp(const MyApp());
+}
+
+
 void main() {
   runApp(const MyApp());
 }
