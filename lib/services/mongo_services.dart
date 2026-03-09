@@ -61,7 +61,7 @@ class MongoService {
         throw Exception("MONGODB_URI not found in .env file");
       }
 
-      _db = Db(dbUri);
+      _db = await Db.create(dbUri);
       await _db!.open().timeout(
         const Duration(seconds: 15),
         onTimeout: () => throw Exception("Connection timeout (15s)"),
