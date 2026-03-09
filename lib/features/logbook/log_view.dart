@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:logbook_app_001/features/logbook/counter_controller.dart'; // Import controller lama Anda
 import 'package:logbook_app_001/features/models/log_model.dart';   // Pastikan path ini sesuai
 import 'package:logbook_app_001/features/onboarding/onboarding_view.dart';
-import 'package:logbook_app_001/features/logbook/log_controller.dart'; // Import controller baru yang sudah diperbarui
+import 'package:logbook_app_001/features/logbook/log_controller.dart';
+import 'package:logbook_app_001/services/mongo_services.dart'; 
+import 'package:intl/intl.dart'; 
 
 class LogView extends StatefulWidget {
   final String username;
@@ -284,39 +286,60 @@ void _showAddLogDialog() {
                       )
                     );
                   }
-                  return ListView.builder(
-                    itemCount: currentLogs.length,
-                    itemBuilder: (context, index) {
-                      final log = currentLogs[index];
-                      // Menampilkan data LogModel ke dalam Card (Langkah 3)
-                      return Card(
-                        elevation: 2,
-                        color: _getCategoryColor( log.category), // Warna berdasarkan kategori
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        child: ListTile(
-                          leading: const Icon(Icons.note_alt_outlined, color: Colors.indigo),
-                          title: Text(log.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(log.description),
-                          trailing: Wrap(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _showEditLogDialog(index, log),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  _logController.removeLog(index);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Catatan berhasil dihapus")),
-                                  );
-                                },
-                              ),
-                            ],
+                  return RefreshIndicator(
+                    onRefresh: _initDatabase,
+                    child: ListView.builder(
+                      itemCount: currentLogs.length,
+                      itemBuilder: (context, index) {
+                        final log = currentLogs[index];
+
+                        String formattedDate = log.date;
+                        try {
+                          final parsedDate = DateTime.parse(log.date);
+                          formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(parsedDate);
+                        }catch (e) {
+                          // Jika parsing gagal, tetap gunakan string asli
+                        }
+                        // Menampilkan data LogModel ke dalam Card (Langkah 3)
+                        return Card(
+                          elevation: 2,
+                          color: _getCategoryColor( log.category), // Warna berdasarkan kategori
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            leading: const Icon(Icons.note_alt_outlined, color: Colors.indigo),
+                            title: Text(log.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(log.description),
+                                const SizedBox(height: 4),
+                                Text(
+                                  formattedDate,
+                                  style: TextStyle(fontSize: 12, color: Colors.indigo.shade400, fontWeight: FontWeight.w600),
+                                )
+                              ],
+                            ),
+                            trailing: Wrap(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  onPressed: () => _showEditLogDialog(index, log),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    _logController.removeLog(index);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Catatan berhasil dihapus")),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    )
                   );
                 },
               ),

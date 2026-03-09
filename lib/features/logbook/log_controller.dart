@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 import '../models/log_model.dart';
-import 'package:logbook_app_001/services/mongo_service.dart';
+import 'package:logbook_app_001/services/mongo_services.dart';
 import 'package:logbook_app_001/helpers/log_helper.dart';
 
 class LogController {
@@ -43,8 +43,15 @@ class LogController {
       await MongoService().insertLog(newLog); // Kirim ke cloud
       logsNotifier.value = [...logsNotifier.value, newLog]; // Update UI
       filteredLogs.value = logsNotifier.value;
+      
+      // Tambahkan pencatatan log sukses
+      await LogHelper.writeLog(
+        "SUCCESS: Tambah data dengan ID lokal",
+        source: "log_controller.dart",
+        level: 2,
+      );
     } catch (e) {
-      await LogHelper.writeLog("ERROR: Gagal sinkronisasi Add - $e", level: 1);
+      await LogHelper.writeLog("ERROR: Gagal sinkronisasi Add - $e", source: "log_controller.dart", level: 1);
     }
   }
 
@@ -65,8 +72,15 @@ class LogController {
       currentLogs[index] = updatedLog;
       logsNotifier.value = currentLogs;
       filteredLogs.value = logsNotifier.value;
+      
+      // Tambahkan pencatatan log sukses
+      await LogHelper.writeLog(
+        "SUCCESS: Sinkronisasi Update '${oldLog.title}' Berhasil",
+        source: "log_controller.dart",
+        level: 2,
+      );
     } catch (e) {
-      await LogHelper.writeLog("ERROR: Gagal sinkronisasi Update - $e", level: 1);
+      await LogHelper.writeLog("ERROR: Gagal sinkronisasi Update - $e", source: "log_controller.dart", level: 1);
     }
   }
 
@@ -80,9 +94,16 @@ class LogController {
         currentLogs.removeAt(index);
         logsNotifier.value = currentLogs;
         filteredLogs.value = logsNotifier.value;
+        
+        // Tambahkan pencatatan log sukses
+        await LogHelper.writeLog(
+          "SUCCESS: Sinkronisasi Hapus '${targetLog.title}' Berhasil",
+          source: "log_controller.dart",
+          level: 2,
+        );
       }
     } catch (e) {
-      await LogHelper.writeLog("ERROR: Gagal sinkronisasi Hapus - $e", level: 1);
+      await LogHelper.writeLog("ERROR: Gagal sinkronisasi Hapus - $e", source: "log_controller.dart", level: 1);
     }
   }
 }
