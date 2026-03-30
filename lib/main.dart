@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logbook_app_001/features/onboarding/onboarding_view.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:logbook_app_001/features/models/log_model.dart';
+
 
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: ".env");
+
+  await Hive.initFlutter();
+  Hive.registerAdapter(LogModelAdapter());
+  await Hive.openBox<LogModel>('offline_logs');
   
   runApp(const MyApp());
 }
@@ -114,7 +121,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('You have pushed the button this many times:'),
             Text(
